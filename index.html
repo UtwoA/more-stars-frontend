@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>More Stars Payment</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; text-align: center; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Оплата через TON или СБП</h1>
+
+    <!-- TON Connect -->
+    <div id="ton-connect-button"></div>
+
+    <div id="payment-section" style="display:none;">
+        <h3>Криптовалюта</h3>
+        <button id="pay-ton">0.1 TON</button>
+        <button id="pay-usdt">1 USDT</button>
+    </div>
+
+    <h3>Рубли</h3>
+    <button id="pay-sbp">Оплатить через СБП</button>
+
+    <script>
+        const manifestUrl = 'https://utwoa.github.io/more-stars-frontend/tonconnect-manifest.json';
+
+        const connector = new TON_CONNECT_SDK.TonConnect({
+            manifestUrl: manifestUrl,
+            buttonRootId: 'ton-connect-button'
+        });
+
+        connector.onStatusChange(wallet => {
+            if (wallet) {
+                document.getElementById('payment-section').style.display('block');
+            }
+        });
+
+        document.getElementById('pay-ton').addEventListener('click', () => {
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 300,
+                messages: [
+                    {
+                        address: 'UQyour_wallet_address_here',
+                        amount: '100000000',
+                        payload: 'teiUGF5bWVudCBmb3IgdXNlciAxMjM='
+                    }
+                ]
+            };
+            connector.sendTransaction(transaction);
+        });
+
+        document.getElementById('pay-usdt').addEventListener('click', () => {
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 300,
+                messages: [
+                    {
+                        address: 'EQCxE6mUtQJKFn6M9k2RQP094dZjXeAe_Xn9_3t1Oh_DhAzk',
+                        amount: '500000000',
+                        payload: 'teiUGF5bWVudCBmb3IgdXNlciAxMjM='
+                    }
+                ]
+            };
+            connector.sendTransaction(transaction);
+        });
+
+        document.getElementById('pay-sbp').addEventListener('click', () => {
+            if (window.Telegram?.WebApp) {
+                const user = window.Telegram.WebApp.initDataUnsafe?.user;
+                if (user) {
+                    window.open(`https://yourserver.com/sbp?user_id=${user.id}`, '_blank');
+                }
+            } else {
+                alert("Пожалуйста, откройте в Telegram Mini App");
+            }
+        });
+    </script>
+</body>
+</html>
