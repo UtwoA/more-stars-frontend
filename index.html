@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--suppress CssUnresolvedCustomProperty -->
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
@@ -193,7 +194,7 @@
       width:92vw; max-width:980px; height:var(--nav-height); border-radius:28px; padding:10px 14px;
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.05));
-      border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(60px) saturate(150%);
       box-shadow: var(--shadow-1); z-index:140;
     }
     .nav-slot { flex:1; display:flex; justify-content:center; align-items:center; }
@@ -203,6 +204,16 @@
     .nav-item.active .ico { background: linear-gradient(135deg, rgba(42,139,242,0.16), rgba(139,92,255,0.12)); box-shadow:0 10px 28px rgba(42,139,242,0.06), inset 0 0 10px rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); transform:scale(1.04); }
     .nav-item .label { font-size:12px; color:var(--muted); }
     .nav-center { transform: translateY(-4px); }
+
+    @keyframes walletPulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.03); opacity: 0.85; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .wallet-connecting {
+      animation: walletPulse 0.8s ease-in-out infinite;
+}
   </style>
 </head>
 <body>
@@ -260,7 +271,104 @@
       <a id="ref-link" class="value" href="#" target="_blank" style="color:var(--accentA);word-break:break-all">—</a>
       <div style="margin-top:12px"><div class="label">Приглашено</div><div class="value" id="ref-count">0</div></div>
     </div>
+
+    <div class="card" id="wallet-card">
+      <div style="font-weight:800;margin-bottom:8px">Кошелек</div>
+
+      <div class="label">Статус</div>
+      <div id="wallet-status" class="value">Не подключён</div>
+
+      <div class="label" id="balance-label" style="display:none;margin-top:12px">Баланс</div>
+      <div id="wallet-balance" class="value" style="display:none;margin-bottom:12px">0 TON</div>
+
+      <button id="wallet-connect-btn" class="btn" style="margin-top: 12px">Подключить кошелек</button>
+    </div>
+
+    <div class="card" style="text-align:center;">
+      <div style="font-weight:800;margin-bottom:8px">Связаться с нами</div>
+      <button id="contact-support" class="btn" style="margin-top: 12px;">
+        Поддержка
+      </button>
+    </div>
+
   </section>
+
+  <section id="payment-page" class="page">
+    <div class="card" style="text-align:center;padding:22px">
+
+      <div id="payment-title" style="font-weight:800;font-size:18px;margin-bottom:10px">
+        Покупка
+      </div>
+
+      <div id="payment-amount" style="font-size:15px;color:var(--muted);margin-bottom:22px">
+        —
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="pay-wallet">Оплатить через Wallet</button>
+        <button class="btn" id="pay-cryptobot"
+                style="background:linear-gradient(135deg,#0088cc,#004c80)">
+          CryptoBot
+        </button>
+        <button class="btn secondary" id="pay-sbp">
+          СБП (Российские банки)
+        </button>
+      </div>
+    </div>
+    <img src="paymentLoading.gif"
+     alt="Payment Animation"
+     style="width:150px;margin:60px auto 0;display:block;opacity:0.9;" />
+
+  </section>
+
+  <section id="success-page" class="page">
+    <div class="card" style="text-align:center;padding:22px">
+
+      <div style="font-weight:800;font-size:20px;margin-bottom:8px">
+        Оплата прошла успешно! 🎉
+      </div>
+
+      <div id="success-desc"
+           style="font-size:15px;color:var(--muted);margin-bottom:22px">
+        Спасибо за покупку.
+      </div>
+
+      <button class="btn" id="success-back" style="margin-top: 50px">
+        Вернуться в магазин
+      </button>
+    </div>
+
+    <img src="paymentSuccess.gif"
+         alt="Success"
+         style="width:200px;margin:60px auto 0;display:block;opacity:0.9;" />
+
+    <canvas id="confetti-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+
+  </section>
+
+  <section id="failure-page" class="page">
+    <div class="card" style="text-align:center;padding:22px">
+
+      <div id="failure-title" style="font-weight:800;font-size:18px;margin-bottom:10px;color:#ff4d4f;">
+        Оплата не прошла
+      </div>
+
+      <div id="failure-desc" style="font-size:15px;color:var(--muted);margin-bottom:22px">
+        К сожалению, оплата не была завершена. Попробуйте ещё раз.
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="retry-payment">Попробовать снова</button>
+        <button class="btn secondary" id="go-shop">Вернуться в магазин</button>
+      </div>
+    </div>
+
+    <img src="paymentFailure.gif"
+     alt="Payment Failed"
+     style="width:200px;margin:60px auto 0;display:block;opacity:0.9;" />
+  </section>
+
+
 
 </main>
 
@@ -271,6 +379,24 @@
 </nav>
 
 <script>
+
+let currentPurchase = {
+  id: null,
+  title: null,
+  price: null
+};
+
+function openPaymentPage(pkg) {
+  currentPurchase = pkg;
+
+  document.getElementById("payment-title").textContent = pkg.title;
+  document.getElementById("payment-amount").textContent = pkg.price
+      ? `К оплате: ${pkg.price}`
+      : "Выберите сумму";
+
+  switchPage("payment-page");
+}
+
 function el(tag,props={},children=[]){
   const node=document.createElement(tag);
   Object.entries(props).forEach(([k,v])=>{
@@ -311,9 +437,9 @@ const starsPackages = [
 
 
 const premiumPackagesData = [
-  {id:'prem1', title:'1 год', price:'299 ₽', badge:'Premium'},
-  {id:'prem3', title:'3 месяца', price:'799 ₽', badge:'Premium'},
-  {id:'prem6', title:'6 мес.', price:'1499 ₽', badge:'Premium'}
+  {id:'prem1', title:'Premium 1 год', price:'299 ₽', badge:'Top'},
+  {id:'prem3', title:'Premium 3 месяца', price:'799 ₽', badge:'Premium'},
+  {id:'prem6', title:'Premium 6 месяцев', price:'1499 ₽', badge:'HOT'}
 ];
 
 // Рендер популярных пакетов
@@ -330,7 +456,7 @@ function renderPopular(){
       el('div',{class:'price',text:pkg.price}),
       el('button',{class:'btn',text:'Купить'})
     ]);
-    bottom.querySelector('button').addEventListener('click',()=>location.href=`https://t.me/yourbot?start=buy_${pkg.id}`);
+    bottom.querySelector('button').addEventListener('click',()=>openPaymentPage(pkg));
     card.appendChild(top);
     card.appendChild(el('div',{style:'height:6px'}));
     card.appendChild(bottom);
@@ -377,8 +503,8 @@ function setUserFromTelegram(){
         const ref=document.getElementById('ref-link');
         uname.textContent=user.username?`@${user.username}`:(user.first_name||'User');
         uid.textContent=user.id||'';
-        ref.textContent=`https://t.me/yourbot?start=${user.id}`;
-        ref.href=`https://t.me/yourbot?start=${user.id}`;
+        ref.textContent=`https://t.me/more_stars_bot?start=${user.id}`;
+        ref.href=`https://t.me/more_stars_bot?start=${user.id}`;
         if(user.photo_url){
           const i=new Image();
           i.onload=()=>{ avatar.src=user.photo_url; avatar.classList.remove('skeleton'); };
@@ -390,8 +516,8 @@ function setUserFromTelegram(){
       const avatar=document.getElementById('user-avatar');
       document.getElementById('user-username').textContent='@demo_user';
       document.getElementById('user-id').textContent='123456';
-      document.getElementById('ref-link').textContent='https://t.me/yourbot?start=123456';
-      document.getElementById('ref-link').href='https://t.me/yourbot?start=123456';
+      document.getElementById('ref-link').textContent='https://t.me/more_stars_bot?start=123456';
+      document.getElementById('ref-link').href='https://t.me/more_stars_bot?start=123456';
       avatar.src='https://via.placeholder.com/80/0e0f12/ffffff?text=D'; avatar.classList.remove('skeleton');
     }
   }catch(e){ console.warn('Telegram init read error',e); }
@@ -434,7 +560,11 @@ function renderGrid(gridId, packages){
         if (isNaN(val) || val < 50) val = 50;
         if (val > 20000) val = 20000;
         input.value = val;
-        location.href = `https://t.me/yourbot?start=buy_custom_${val}`;
+        openPaymentPage({
+          id: "custom",
+          title: `${val} ⭐`,
+          price: val + " ₽"
+        });
       });
 
       input.addEventListener('blur', () => {
@@ -465,7 +595,7 @@ function renderGrid(gridId, packages){
 
       // Добавляем обработчик кнопки
       bottom.querySelector('button').addEventListener('click', () => {
-        location.href = `https://t.me/yourbot?start=buy_${pkg.id}`;
+        openPaymentPage(pkg);
       });
 
       card.appendChild(top);
@@ -488,6 +618,224 @@ document.getElementById('buy-premium').addEventListener('click',()=>{
   switchPage('buy-premium-page');
   renderGrid('premium-grid', premiumPackagesData);
 });
+
+// ---------- Telegram Wallet Logic (Frontend Mock) ----------
+let walletConnected = false;
+
+// Данные будут заменены ответом бэкенда
+let walletInfo = {
+  type: null,
+  address: null,
+  balance: null
+};
+
+function updateWalletUI() {
+  const status = document.getElementById("wallet-status");
+  const balanceLabel = document.getElementById("balance-label");
+  const balance = document.getElementById("wallet-balance");
+  const btn = document.getElementById("wallet-connect-btn");
+  const card = document.getElementById("wallet-card");
+
+  if (walletConnected && walletInfo.type && walletInfo.address) {
+
+    // короткий адрес
+    const shortAddr = walletInfo.address.slice(0, 4) + "…" + walletInfo.address.slice(-4);
+
+    status.textContent = `${walletInfo.type} (${shortAddr})`;
+    status.style.color = "var(--accentA)";
+
+    // показываем баланс
+    balanceLabel.style.display = "block";
+    balance.style.display = "block";
+    balance.textContent = `${walletInfo.balance} TON`;
+
+    btn.textContent = "Отключить Wallet";
+    btn.classList.add("secondary");
+
+    card.classList.remove("wallet-connecting");
+
+  } else {
+    status.textContent = "Не подключён";
+    status.style.color = "var(--muted)";
+
+    balanceLabel.style.display = "none";
+    balance.style.display = "none";
+
+    btn.textContent = "Подключить кошелек";
+    btn.classList.remove("secondary");
+
+    card.classList.remove("wallet-connecting");
+  }
+}
+
+document.getElementById("wallet-connect-btn").addEventListener("click", () => {
+  const card = document.getElementById("wallet-card");
+
+  if (!walletConnected) {
+
+    // --- Показываем анимацию подключения ---
+    card.classList.add("wallet-connecting");
+
+    // Имитируем запрос к серверу (TON Connect)
+    setTimeout(() => {
+
+      // моковые данные
+      walletConnected = true;
+      walletInfo = {
+        type: "Tonkeeper",
+        address: "EQC1qwertyasdfghjklzxcvbnm123456789zpQn",
+        balance: (Math.random() * 42 + 1).toFixed(2) // просто рандомный баланс
+      };
+
+      updateWalletUI();
+    }, 1200);
+
+  } else {
+    walletConnected = false;
+    walletInfo = { type: null, address: null, balance: null };
+    updateWalletUI();
+  }
+});
+
+updateWalletUI();
+
+document.getElementById("pay-wallet").addEventListener("click", () => {
+      // Пример ошибки
+    const success = true; // мок
+    if(success){
+      openSuccessPage(currentPurchase);
+    } else {
+      openFailurePage(currentPurchase);
+    }
+  });
+
+document.getElementById("pay-cryptobot").addEventListener("click", () => {
+    // Пример ошибки
+    const success = false; // мок
+    if(success){
+      openSuccessPage(currentPurchase);
+    } else {
+      openFailurePage(currentPurchase);
+    }
+  });
+
+document.getElementById("pay-sbp").addEventListener("click", () => {
+    // Пример ошибки
+    const success = Math.random() > 0.5; // мок
+    if(success){
+      openSuccessPage(currentPurchase);
+    } else {
+      openFailurePage(currentPurchase);
+    }
+  });
+function openSuccessPage(pkg) {
+  document.getElementById("success-desc").textContent =
+    `Вы приобрели: ${pkg.title}`;
+
+  switchPage("success-page");
+  launchConfetti();
+}
+document.getElementById("success-back").addEventListener("click", () => {
+  switchPage("shop");
+});
+
+// -------- Confetti Animation --------
+function launchConfetti() {
+  const canvas = document.getElementById("confetti-canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+
+  const confettiCount = 100;
+  const confetti = [];
+
+  for (let i = 0; i < confettiCount; i++) {
+    confetti.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      r: Math.random() * 6 + 4,
+      d: Math.random() * confettiCount,
+      color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+      tilt: Math.random() * 10 - 10,
+      tiltAngleIncremental: Math.random() * 0.07 + 0.05,
+      tiltAngle: 0
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    confetti.forEach((c) => {
+      ctx.beginPath();
+      ctx.lineWidth = c.r / 2;
+      ctx.strokeStyle = c.color;
+      ctx.moveTo(c.x + c.tilt + c.r / 4, c.y);
+      ctx.lineTo(c.x + c.tilt, c.y + c.tilt + c.r / 4);
+      ctx.stroke();
+    });
+    update();
+  }
+
+  function update() {
+    confetti.forEach((c, i) => {
+      c.tiltAngle += c.tiltAngleIncremental;
+      c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+      c.x += Math.sin(c.d);
+      c.tilt = Math.sin(c.tiltAngle) * 15;
+
+      if (c.y > canvas.height) {
+        confetti[i] = {
+          x: Math.random() * canvas.width,
+          y: -10,
+          r: c.r,
+          d: c.d,
+          color: c.color,
+          tilt: c.tilt,
+          tiltAngleIncremental: c.tiltAngleIncremental,
+          tiltAngle: 0
+        };
+      }
+    });
+  }
+
+  let anim;
+  function render() {
+    draw();
+    anim = requestAnimationFrame(render);
+  }
+
+  render();
+
+  // Остановить конфетти через 5 секунд
+  setTimeout(() => cancelAnimationFrame(anim), 300000);
+}
+
+function openFailurePage(pkg) {
+  if(pkg){
+    document.getElementById("failure-desc").textContent =
+      `Не удалось оплатить: ${pkg.title}. Попробуйте другой способ оплаты.`;
+  } else {
+    document.getElementById("failure-desc").textContent =
+      "К сожалению, оплата не была завершена. Попробуйте ещё раз.";
+  }
+
+  switchPage("failure-page");
+}
+
+// Кнопки
+document.getElementById("retry-payment").addEventListener("click", () => {
+  if(currentPurchase) openPaymentPage(currentPurchase);
+});
+
+document.getElementById("go-shop").addEventListener("click", () => {
+  switchPage("shop");
+});
+
+document.getElementById("contact-support").addEventListener("click", () => {
+  // Можно открыть Telegram-чат с ботом или ссылку на поддержку
+  window.open("https://t.me/more_stars_support", "_blank");
+});
+
+
 </script>
 </body>
 </html>
