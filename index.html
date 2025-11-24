@@ -399,34 +399,14 @@
 
 <script>
 
+// Данные о покупке
 let currentPurchase = {
   id: null,
   title: null,
   price: null
 };
 
-function openPaymentPage(pkg) {
-  currentPurchase = pkg;
-
-  document.getElementById("payment-title").textContent = pkg.title;
-  document.getElementById("payment-amount").textContent = pkg.price
-      ? `К оплате: ${pkg.price}`
-      : "Выберите сумму";
-
-  switchPage("payment-page");
-}
-
-function el(tag,props={},children=[]){
-  const node=document.createElement(tag);
-  Object.entries(props).forEach(([k,v])=>{
-    if(k==='class') node.className=v;
-    else if(k==='text') node.textContent=v;
-    else node.setAttribute(k,v);
-  });
-  children.forEach(c=>node.appendChild(typeof c==='string'?document.createTextNode(c):c));
-  return node;
-}
-
+// Популярные товары на главном экране
 const popularPackages=[
   {id:'p1',title:'100 ⭐',price:'99 ₽',badge:'Best'},
   {id:'p2',title:'500 ⭐',price:'449 ₽',badge:'Popular'},
@@ -436,6 +416,7 @@ const popularPackages=[
   {id:'p6',title:'1 Year',price:'299 ₽',badge:'Premium'}
 ];
 
+// Карточки товаров на странице Stars
 const starsPackages = [
   {id:'custom', title:'Свой ⭐', custom:true},
   {id:'s50',   title:'50 ⭐',    price:'49 ₽',   badge:'New'},
@@ -454,12 +435,141 @@ const starsPackages = [
   {id:'s20000',title:'20000 ⭐', price:'12999 ₽', badge:'Legend'}
 ];
 
-
+// Карточки товаров на странице Premium
 const premiumPackagesData = [
   {id:'prem1', title:'Premium 1 год', price:'299 ₽', badge:'Top'},
   {id:'prem3', title:'Premium 3 месяца', price:'799 ₽', badge:'Premium'},
   {id:'prem6', title:'Premium 6 месяцев', price:'1499 ₽', badge:'HOT'}
 ];
+
+// Привязанный кошелек
+let walletConnected = false;
+
+// Инфо о кошельке
+let walletInfo = {
+  type: null,
+  address: null,
+  balance: null
+};
+
+// Навигация
+document.querySelectorAll('.nav-item').forEach(n=>{
+  n.addEventListener('click',()=>switchPage(n.dataset.page,n));
+  n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();n.click();}});
+});
+
+// Кнопки открытия страниц ассортимента
+document.getElementById('buy-stars').addEventListener('click',()=>{
+  switchPage('buy-stars-page');
+  renderGrid('stars-grid', starsPackages);
+});
+document.getElementById('buy-premium').addEventListener('click',()=>{
+  switchPage('buy-premium-page');
+  renderGrid('premium-grid', premiumPackagesData);
+});
+
+// Кнопка подключения кошелька
+document.getElementById("wallet-connect-btn").addEventListener("click", () => {
+  const card = document.getElementById("wallet-card");
+
+  if (!walletConnected) {
+
+    // --- Показываем анимацию подключения ---
+    card.classList.add("wallet-connecting");
+
+    // Имитируем запрос к серверу (TON Connect)
+    setTimeout(() => {
+
+      // моковые данные
+      walletConnected = true;
+      walletInfo = {
+        type: "Tonkeeper",
+        address: "EQC1qwertyasdfghjklzxcvbnm123456789zpQn",
+        balance: (Math.random() * 42 + 1).toFixed(2) // просто рандомный баланс
+      };
+
+      updateWalletUI();
+    }, 1200);
+
+  } else {
+    walletConnected = false;
+    walletInfo = { type: null, address: null, balance: null };
+    updateWalletUI();
+  }
+});
+
+// Кнопки оплаты
+document.getElementById("pay-wallet").addEventListener("click", () => {
+      // Пример ошибки
+    const success = true; // мок
+    if(success){
+      openSuccessPage(currentPurchase);
+    } else {
+      openFailurePage(currentPurchase);
+    }
+  });
+document.getElementById("pay-cryptobot").addEventListener("click", () => {
+    // Пример ошибки
+    const success = false; // мок
+    if(success){
+      openSuccessPage(currentPurchase);
+    } else {
+      openFailurePage(currentPurchase);
+    }
+  });
+document.getElementById("pay-sbp").addEventListener("click", () => {
+    // Пример ошибки
+    const success = Math.random() > 0.5; // мок
+    if(success){
+      openSuccessPage(currentPurchase);
+    } else {
+      openFailurePage(currentPurchase);
+    }
+  });
+
+updateWalletUI();
+// Кнопка после удачной оплаты
+document.getElementById("success-back").addEventListener("click", () => {
+  switchPage("shop");
+});
+
+// Кнопки после неудачной оплаты
+document.getElementById("retry-payment").addEventListener("click", () => {
+  if(currentPurchase) openPaymentPage(currentPurchase);
+});
+document.getElementById("go-shop").addEventListener("click", () => {
+  switchPage("shop");
+});
+
+// Кнопка обратной связи
+document.getElementById("contact-support").addEventListener("click", () => {
+  // Можно открыть Telegram-чат с ботом или ссылку на поддержку
+  window.open("https://t.me/more_stars_support", "_blank");
+});
+
+// Я не знаю что это, наверное функция рендера карточек
+function el(tag,props={},children=[]){
+  const node=document.createElement(tag);
+  Object.entries(props).forEach(([k,v])=>{
+    if(k==='class') node.className=v;
+    else if(k==='text') node.textContent=v;
+    else node.setAttribute(k,v);
+  });
+  children.forEach(c=>node.appendChild(typeof c==='string'?document.createTextNode(c):c));
+  return node;
+}
+
+// Открытия страницы оплаты
+function openPaymentPage(pkg) {
+  currentPurchase = pkg;
+
+  document.getElementById("payment-title").textContent = pkg.title;
+  document.getElementById("payment-amount").textContent = pkg.price
+      ? `К оплате: ${pkg.price}`
+      : "Выберите сумму";
+
+  switchPage("payment-page");
+}
 
 // Рендер популярных пакетов
 function renderPopular(){
@@ -493,11 +603,7 @@ function renderPopular(){
   setTimeout(()=> renderPopular(),650);
 })();
 
-// Навигация
-document.querySelectorAll('.nav-item').forEach(n=>{
-  n.addEventListener('click',()=>switchPage(n.dataset.page,n));
-  n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();n.click();}});
-});
+// Смена страницы пагинацией (панелью навигации)
 function switchPage(id,node){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const page=document.getElementById(id);
@@ -510,7 +616,7 @@ function switchPage(id,node){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// Telegram user
+// Заполнение страницы Profile
 function setUserFromTelegram(){
   try{
     if(window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe){
@@ -626,28 +732,7 @@ function renderGrid(gridId, packages){
   });
 }
 
-
-
-// Кнопки открытия страниц
-document.getElementById('buy-stars').addEventListener('click',()=>{
-  switchPage('buy-stars-page');
-  renderGrid('stars-grid', starsPackages);
-});
-document.getElementById('buy-premium').addEventListener('click',()=>{
-  switchPage('buy-premium-page');
-  renderGrid('premium-grid', premiumPackagesData);
-});
-
-// ---------- Telegram Wallet Logic (Frontend Mock) ----------
-let walletConnected = false;
-
-// Данные будут заменены ответом бэкенда
-let walletInfo = {
-  type: null,
-  address: null,
-  balance: null
-};
-
+// Подключение кошелька
 function updateWalletUI() {
   const status = document.getElementById("wallet-status");
   const balanceLabel = document.getElementById("balance-label");
@@ -687,66 +772,7 @@ function updateWalletUI() {
   }
 }
 
-document.getElementById("wallet-connect-btn").addEventListener("click", () => {
-  const card = document.getElementById("wallet-card");
-
-  if (!walletConnected) {
-
-    // --- Показываем анимацию подключения ---
-    card.classList.add("wallet-connecting");
-
-    // Имитируем запрос к серверу (TON Connect)
-    setTimeout(() => {
-
-      // моковые данные
-      walletConnected = true;
-      walletInfo = {
-        type: "Tonkeeper",
-        address: "EQC1qwertyasdfghjklzxcvbnm123456789zpQn",
-        balance: (Math.random() * 42 + 1).toFixed(2) // просто рандомный баланс
-      };
-
-      updateWalletUI();
-    }, 1200);
-
-  } else {
-    walletConnected = false;
-    walletInfo = { type: null, address: null, balance: null };
-    updateWalletUI();
-  }
-});
-
-updateWalletUI();
-
-document.getElementById("pay-wallet").addEventListener("click", () => {
-      // Пример ошибки
-    const success = true; // мок
-    if(success){
-      openSuccessPage(currentPurchase);
-    } else {
-      openFailurePage(currentPurchase);
-    }
-  });
-
-document.getElementById("pay-cryptobot").addEventListener("click", () => {
-    // Пример ошибки
-    const success = false; // мок
-    if(success){
-      openSuccessPage(currentPurchase);
-    } else {
-      openFailurePage(currentPurchase);
-    }
-  });
-
-document.getElementById("pay-sbp").addEventListener("click", () => {
-    // Пример ошибки
-    const success = Math.random() > 0.5; // мок
-    if(success){
-      openSuccessPage(currentPurchase);
-    } else {
-      openFailurePage(currentPurchase);
-    }
-  });
+// Открытие страницы удачной оплаты
 function openSuccessPage(pkg) {
   document.getElementById("success-desc").textContent =
     `Вы приобрели: ${pkg.title}`;
@@ -754,11 +780,8 @@ function openSuccessPage(pkg) {
   switchPage("success-page");
   launchConfetti();
 }
-document.getElementById("success-back").addEventListener("click", () => {
-  switchPage("shop");
-});
 
-// -------- Confetti Animation --------
+// Анимация конфетти при удачной оплате
 function launchConfetti() {
   const canvas = document.getElementById("confetti-canvas");
   const ctx = canvas.getContext("2d");
@@ -828,6 +851,7 @@ function launchConfetti() {
   setTimeout(() => cancelAnimationFrame(anim), 300000);
 }
 
+// Открытие страницы после неудачной оплаты
 function openFailurePage(pkg) {
   if(pkg){
     document.getElementById("failure-desc").textContent =
@@ -839,21 +863,6 @@ function openFailurePage(pkg) {
 
   switchPage("failure-page");
 }
-
-// Кнопки
-document.getElementById("retry-payment").addEventListener("click", () => {
-  if(currentPurchase) openPaymentPage(currentPurchase);
-});
-
-document.getElementById("go-shop").addEventListener("click", () => {
-  switchPage("shop");
-});
-
-document.getElementById("contact-support").addEventListener("click", () => {
-  // Можно открыть Telegram-чат с ботом или ссылку на поддержку
-  window.open("https://t.me/more_stars_support", "_blank");
-});
-
 
 </script>
 </body>
