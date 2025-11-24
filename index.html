@@ -240,29 +240,6 @@
 <body>
 <main class="container">
 
-  <section id="shop" class="page active">
-    <img src="icon-1.png" alt="More Stars" class="logo" />
-    <div class="card actions" role="region" aria-label="Actions">
-      <button id="buy-stars" class="btn" aria-label="Купить Stars">Купить Stars</button>
-      <button id="buy-premium" class="btn secondary" aria-label="Telegram Premium">Telegram Premium</button>
-    </div>
-    <div class="card" role="region" aria-label="Популярные пакеты">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-weight:800;font-size:15px">Популярные пакеты</div>
-        <div style="color:var(--muted);font-size:13px">Выбор игроков</div>
-      </div>
-      <div class="popular" id="popular-grid" aria-live="polite"></div>
-    </div>
-  </section>
-
-  <section id="buy-stars-page" class="page">
-    <div class="popular" id="stars-grid" aria-live="polite"></div>
-  </section>
-
-  <section id="buy-premium-page" class="page">
-    <div class="popular" id="premium-grid" aria-live="polite"></div>
-  </section>
-
   <section id="history" class="page">
     <div id="history-loader">
       <div class="card skeleton" style="height:64px"></div>
@@ -313,6 +290,53 @@
     </div>
 
   </section>
+
+  <section id="shop" class="page active">
+    <img src="icon-1.png" alt="More Stars" class="logo" />
+    <div class="card actions" role="region" aria-label="Actions">
+      <button id="buy-stars" class="btn" aria-label="Купить Stars">Купить Stars</button>
+      <button id="buy-premium" class="btn secondary" aria-label="Telegram Premium">Telegram Premium</button>
+    </div>
+    <div class="card" role="region" aria-label="Популярные пакеты">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:800;font-size:15px">Популярные пакеты</div>
+        <div style="color:var(--muted);font-size:13px">Выбор игроков</div>
+      </div>
+      <div class="popular" id="popular-grid" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="buy-stars-page" class="page">
+    <div class="popular" id="stars-grid" aria-live="polite"></div>
+  </section>
+
+  <section id="buy-premium-page" class="page">
+    <div class="popular" id="premium-grid" aria-live="polite"></div>
+  </section>
+
+  <section id="recipient-page" class="page">
+  <div class="card" style="padding:22px">
+    <div style="font-weight:800;font-size:18px;margin-bottom:16px;text-align:center">Кому отправить?</div>
+
+    <div class="actions" style="margin-top:12px;gap:12px">
+      <button id="to-self" class="btn">Себе</button>
+      <button id="to-friend" class="btn secondary">Другу</button>
+    </div>
+
+    <div id="friend-input-container" style="display:none;margin-top:18px">
+      <div class="label" style="margin-bottom:8px">Введите @username друга</div>
+      <input type="text" id="friend-username" class="qty" placeholder="@username" />
+      <!-- Кнопка «Далее» будет здесь -->
+      <button id="friend-next-btn" class="btn secondary" style="display:none;margin-top:16px;">
+        Далее
+      </button>
+
+    </div>
+  </div>
+  <img src="selectRecipient.gif"
+   alt="Payment Animation"
+   style="width:128px;margin: 0 auto 17px; display:block;opacity:0.9;" />
+</section>
 
   <section id="payment-page" class="page">
     <div class="card" style="text-align:center;padding:22px">
@@ -452,6 +476,8 @@ let walletInfo = {
   balance: null
 };
 
+let recipientMode = 'self';
+
 // Навигация
 document.querySelectorAll('.nav-item').forEach(n=>{
   n.addEventListener('click',()=>switchPage(n.dataset.page,n));
@@ -547,6 +573,44 @@ document.getElementById("contact-support").addEventListener("click", () => {
   window.open("https://t.me/more_stars_support", "_blank");
 });
 
+// Кнопка "Себе"
+document.getElementById('to-self').addEventListener('click', () => {
+  let selfUser = '@unknown';
+  if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    const user = Telegram.WebApp.initDataUnsafe.user;
+    selfUser = user.username ? `@${user.username}` : (user.first_name || 'Пользователь');
+  }
+  proceedToPayment(selfUser);
+});
+
+// Кнопка "Другу"
+document.getElementById('to-friend').addEventListener('click', () => {
+  document.getElementById('friend-input-container').style.display = 'block';
+  const input = document.getElementById('friend-username');
+  const btn = document.getElementById('friend-next-btn');
+
+  input.value = '';
+  btn.style.display = 'none';
+  input.focus();
+
+  const checkInput = () => {
+    const val = input.value.trim();
+    if (isValidTelegramUsername(val)) {
+      btn.style.display = 'block';
+    } else {
+      btn.style.display = 'none';
+    }
+  };
+
+  // Удаляем старые обработчики, чтобы не дублировать
+  input.oninput = checkInput;
+  btn.onclick = () => {
+    let val = input.value.trim();
+    if (!val.startsWith('@')) val = '@' + val;
+    proceedToPayment(val);
+  };
+});
+
 // Я не знаю что это, наверное функция рендера карточек
 function el(tag,props={},children=[]){
   const node=document.createElement(tag);
@@ -563,7 +627,7 @@ function el(tag,props={},children=[]){
 function openPaymentPage(pkg) {
   currentPurchase = pkg;
 
-  document.getElementById("payment-title").textContent = pkg.title;
+  document.getElementById("payment-title").textContent = pkg.title|| "Покупка";
   document.getElementById("payment-amount").textContent = pkg.price
       ? `К оплате: ${pkg.price}`
       : "Выберите сумму";
@@ -585,7 +649,7 @@ function renderPopular(){
       el('div',{class:'price',text:pkg.price}),
       el('button',{class:'btn',text:'Купить'})
     ]);
-    bottom.querySelector('button').addEventListener('click',()=>openPaymentPage(pkg));
+    bottom.querySelector('button').addEventListener('click',()=>openRecipientPage(pkg));
     card.appendChild(top);
     card.appendChild(el('div',{style:'height:6px'}));
     card.appendChild(bottom);
@@ -685,7 +749,7 @@ function renderGrid(gridId, packages){
         if (isNaN(val) || val < 50) val = 50;
         if (val > 20000) val = 20000;
         input.value = val;
-        openPaymentPage({
+        openRecipientPage({
           id: "custom",
           title: `${val} ⭐`,
           price: val + " ₽"
@@ -720,7 +784,7 @@ function renderGrid(gridId, packages){
 
       // Добавляем обработчик кнопки
       bottom.querySelector('button').addEventListener('click', () => {
-        openPaymentPage(pkg);
+        openRecipientPage(pkg);
       });
 
       card.appendChild(top);
@@ -864,6 +928,23 @@ function openFailurePage(pkg) {
   switchPage("failure-page");
 }
 
+function isValidTelegramUsername(val) {
+  if (!val) return false;
+  val = val.startsWith('@') ? val.slice(1) : val;
+  return /^[a-zA-Z0-9_]{3,32}$/.test(val);
+}
+
+function proceedToPayment(recipient) {
+  currentPurchase.recipient = recipient;
+  openPaymentPage(currentPurchase);
+}
+
+// Функция открытия страницы
+function openRecipientPage(pkg) {
+  currentPurchase = { ...pkg };
+  document.getElementById('friend-input-container').style.display = 'none';
+  switchPage("recipient-page");
+}
 </script>
 </body>
 </html>
