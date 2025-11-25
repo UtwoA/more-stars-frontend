@@ -1032,6 +1032,8 @@ function openFailurePage(pkg) {
   switchPage("failure-page");
 }
 
+localStorage.setItem('lang', 'ru');
+
 async function initWebApp() {
   const userId = document.getElementById("user-id").textContent;
 
