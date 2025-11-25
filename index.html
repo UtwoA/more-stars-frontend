@@ -534,15 +534,49 @@ document.getElementById("pay-wallet").addEventListener("click", () => {
       openFailurePage(currentPurchase);
     }
   });
-document.getElementById("pay-cryptobot").addEventListener("click", () => {
-    // Пример ошибки
-    const success = false; // мок
-    if(success){
-      openSuccessPage(currentPurchase);
-    } else {
-      openFailurePage(currentPurchase);
-    }
+document.getElementById("pay-cryptobot").onclick = async () => {
+  if(!currentPurchase) return alert("Сначала выберите товар");
+
+  // Создаём заказ на бекенде
+  const userId = document.getElementById("user-id").textContent;
+  const response = await fetch("http://127.0.0.1:8000/create_order", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      user_id: userId,
+      recipient: currentPurchase.recipient || "self",
+      product: currentPurchase.title,
+      amount: currentPurchase.price,
+      currency: "USDT" // или другая валюта
+    })
   });
+
+  const data = await response.json();
+  console.log("Создан заказ:", data);
+
+  if(data.crypto_invoice && data.crypto_invoice.result && data.crypto_invoice.result.pay_url){
+    // Открываем ссылку на оплату в Telegram
+    window.Telegram.WebApp.openLink(data.crypto_invoice.result.pay_url);
+
+    // Периодически проверяем статус оплаты
+    const orderId = data.order_id;
+    const interval = setInterval(async () => {
+      const statusRes = await fetch(`http://127.0.0.1:8000/order_status?order_id=${orderId}`);
+      const statusData = await statusRes.json();
+      console.log("Проверка статуса:", statusData);
+
+      if(statusData.status === "paid"){
+        clearInterval(interval);
+        openSuccessPage(currentPurchase);
+      }
+    }, 5000); // каждые 5 секунд
+  } else {
+    alert("Ошибка при создании инвойса");
+  }
+};
+
+
+
 document.getElementById("pay-sbp").addEventListener("click", () => {
     // Пример ошибки
     const success = Math.random() > 0.5; // мок
@@ -631,7 +665,7 @@ function openPaymentPage(pkg) {
   document.getElementById("payment-amount").textContent = pkg.price
       ? `К оплате: ${pkg.price}`
       : "Выберите сумму";
-
+  console.log(currentPurchase)
   switchPage("payment-page");
 }
 
@@ -836,6 +870,24 @@ function updateWalletUI() {
   }
 }
 
+// Функция открытия страницы получателя
+function openRecipientPage(pkg) {
+  currentPurchase = { ...pkg };
+  document.getElementById('friend-input-container').style.display = 'none';
+  switchPage("recipient-page");
+}
+
+function isValidTelegramUsername(val) {
+  if (!val) return false;
+  val = val.startsWith('@') ? val.slice(1) : val;
+  return /^[a-zA-Z0-9_]{3,32}$/.test(val);
+}
+
+function proceedToPayment(recipient) {
+  currentPurchase.recipient = recipient;
+  openPaymentPage(currentPurchase);
+}
+
 // Открытие страницы удачной оплаты
 function openSuccessPage(pkg) {
   document.getElementById("success-desc").textContent =
@@ -928,23 +980,6 @@ function openFailurePage(pkg) {
   switchPage("failure-page");
 }
 
-function isValidTelegramUsername(val) {
-  if (!val) return false;
-  val = val.startsWith('@') ? val.slice(1) : val;
-  return /^[a-zA-Z0-9_]{3,32}$/.test(val);
-}
-
-function proceedToPayment(recipient) {
-  currentPurchase.recipient = recipient;
-  openPaymentPage(currentPurchase);
-}
-
-// Функция открытия страницы
-function openRecipientPage(pkg) {
-  currentPurchase = { ...pkg };
-  document.getElementById('friend-input-container').style.display = 'none';
-  switchPage("recipient-page");
-}
 </script>
 </body>
 </html>
