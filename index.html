@@ -684,15 +684,51 @@ document.getElementById("pay-cryptobot").onclick = async () => {
   }
 };
 
-document.getElementById("pay-sbp").addEventListener("click", () => {
-    // Пример ошибки
-    const success = Math.random() > 0.5; // мок
-    if(success){
-      openSuccessPage(currentPurchase);
-    } else {
-      openFailurePage(currentPurchase);
-    }
+document.getElementById("pay-sbp").onclick = async () => {
+  if(!currentPurchase) return alert("Сначала выберите товар");
+
+  const userId = document.getElementById("user-id").textContent;
+  const amountValue = parseFloat(currentPurchase.price.replace(/[^0-9.]/g,""));
+
+  const response = await fetch("/create_order_sbp", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      user_id: userId,
+      recipient: currentPurchase.recipient || "self",
+      product: currentPurchase.title,
+      amount: amountValue,
+      currency: "RUB"
+    })
   });
+
+  const data = await response.json();
+  console.log("Создан заказ:", data);
+
+  if(data.payment?.response?.url){
+    window.location.href = data.payment.response.url;
+
+    const orderId = data.order_id;
+    const interval = setInterval(async () => {
+      const s = await fetch(`/order_status?order_id=${orderId}`);
+      const sd = await s.json();
+
+      if(sd.status === "paid"){
+        clearInterval(interval);
+        openSuccessPage(currentPurchase);
+      }
+      if(sd.status === "failed"){
+        clearInterval(interval);
+        openFailurePage(currentPurchase);
+      }
+    }, 5000);
+
+  } else {
+    alert("Ошибка при создании платежа");
+  }
+};
+
+
 
 updateWalletUI();
 // Кнопка после удачной оплаты
