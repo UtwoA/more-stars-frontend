@@ -706,9 +706,10 @@ document.getElementById("pay-sbp").onclick = async () => {
   console.log("Создан заказ:", data);
 
   if(data.pay_url){
-    window.open(data.pay_url, "_blank"); // откроется в новой вкладке
-    const orderId = data.order_id;
+    // откроется внешняя вкладка для оплаты
+    window.open(data.pay_url, "_blank");
 
+    const orderId = data.order_id;
     const interval = setInterval(async () => {
       const s = await fetch(`/order_status?order_id=${orderId}`);
       const sd = await s.json();
@@ -726,8 +727,8 @@ document.getElementById("pay-sbp").onclick = async () => {
   } else {
     alert("Ошибка при создании платежа: " + JSON.stringify(data));
   }
-
 };
+
 
 
 
