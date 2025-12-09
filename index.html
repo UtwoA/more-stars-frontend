@@ -441,9 +441,6 @@
       </div>
     </section>
 
-
-
-
     <section id="success-page" class="page">
       <div class="card" style="text-align:center;padding:22px">
 
@@ -493,6 +490,37 @@
 
   </main>
 
+<!-- Подвал -->
+<footer id="web-footer" class="card" style="margin-top:auto; margin-bottom: 100px; margin-left: 10px; margin-right: 10px">
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <!-- Контакты и реквизиты -->
+    <div>
+      <h3 style="color:var(--accentA); margin-bottom:6px;">Контактная информация и реквизиты</h3>
+      <p>Полное наименование: more-stars</p>
+      <p>ИНН: 645008281403</p>
+      <p>ОГРН/ОГРНИП: -</p>
+      <p>Контактный телефон: +7 909 331-18-86</p>
+      <p>Контактный e-mail: workspace.alexey@gmail.com</p>
+    </div>
+
+    <!-- Прайс -->
+    <div>
+      <h3 style="color:var(--accentA); margin-bottom:6px;">Описание и стоимость товаров/услуг</h3>
+      <p>Полный прайс-лист доступен по ссылке:
+        <a href="prices.docx" target="_blank" style="color:var(--accentB);">Скачать prices.xls</a>
+      </p>
+    </div>
+
+    <!-- Оферта -->
+    <div>
+      <h3 style="color:var(--accentA); margin-bottom:6px;">Оферта</h3>
+      <p>Текст оферты доступен по ссылке:
+        <a href="oferta.docx" target="_blank" style="color:var(--accentB);">Скачать oferta.docx</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
 
   <nav class="bottom-nav" role="navigation">
   <div class="nav-slot"><div class="nav-item" data-page="history"><div class="ico">📜</div><div class="label">History</div></div></div>
@@ -515,8 +543,8 @@ const popularPackages=[
   {id:'p2',title:'500 ⭐',price:'700 ₽',badge:'Popular'},
   {id:'p3',title:'1200 ⭐',price:'1680 ₽',badge:'Value'},
   {id:'p4',title:'2500 ⭐',price:'3500 ₽',badge:'Top'},
-  {id:'p5',title:'TONs',price:'0.1 TON',badge:'Crypto'},
-  {id:'p6',title:'1 Year',price:'299 ₽',badge:'Premium'}
+  {id:'p5',  title:'300 ⭐',   price:'420 ₽'},
+  {id:'p6',  title:'500 ⭐',   price:'700 ₽'}
 ];
 
 // Карточки товаров на странице Stars
@@ -1228,6 +1256,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     page.querySelector('.page-content').style.display = isTelegram ? 'block' : 'none';
     page.querySelector('.auth-gate-inline').style.display = isTelegram ? 'none' : 'block';
   });
+  const footer = document.getElementById('web-footer');
+  if (isTelegram) {
+    footer.style.display = 'none';
+  } else {
+    footer.style.display = 'block';
+  }
 
   // Остальной контент сайта всегда показываем
   if (isTelegram || !['profile','history','payment-page'].includes(currentPage)) {
