@@ -18,15 +18,15 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
-    - name: Deploy to server (frontend)
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-          set -e
-          cd /opt/more-stars/more-stars-frontend
-          git pull origin master
-          rsync -av --delete ./ /var/www/more-stars-frontend/
-          systemctl reload nginx
-        EOF
+      - name: Deploy to server (frontend)
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+            set -e
+            cd /opt/more-stars/more-stars-frontend
+            git pull origin master
+            rsync -av --delete ./ /var/www/more-stars-frontend/
+            systemctl reload nginx
+          EOF
 
       - name: Check website is live
         run: |
